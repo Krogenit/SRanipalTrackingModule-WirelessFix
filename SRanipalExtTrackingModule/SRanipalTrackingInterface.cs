@@ -11,6 +11,7 @@ using VRCFaceTracking.Core.Library;
 using VRCFaceTracking.Core.Params.Data;
 using VRCFaceTracking.Core.Params.Expressions;
 using VRCFaceTracking.Core.Types;
+using System;
 
 namespace SRanipalExtTrackingInterface
 {
@@ -202,11 +203,49 @@ namespace SRanipalExtTrackingInterface
                 case Error.WORK:
                     Logger.LogInformation($"{name} successfully started!");
                     return true;
+                case Error.RUNTIME_NO_RESPONSE:
+                    Logger.LogInformation($"Reinitializing SRanipal because of error {error}...");
+                    SRanipal_API.InitialRuntime();
+                    return InitTracker(anipalType, name);
+                case Error.TIMEOUT:
+                    Logger.LogInformation($"Restarting SRanipal because of error {error}...");
+                    restartSRanipalProcess();
+                    return InitTracker(anipalType, name);
                 default:
                     break;
             }
             Logger.LogError($"{name} failed to initialize: {error}");
             return false;
+        }
+
+        public void restartSRanipalProcess()
+        {
+            SRanipal_API.ReleaseRuntime();
+
+            Boolean foundProcess = false;
+            Logger.LogInformation("Searching SRanipal proccess");
+            foreach (var process in Process.GetProcessesByName("sr_runtime"))
+            {
+                process.Kill();
+                Logger.LogInformation($"Killed process {process}");
+                foundProcess = true;
+            }
+
+            if (!foundProcess)
+            {
+                Logger.LogInformation("Process not found");
+            }
+            else
+            {
+                while (Process.GetProcessesByName("sr_runtime").Length >0) {
+                    Logger.LogInformation("Waiting of SRanipal sthutdown...");
+                    Thread.Sleep(10);
+                }
+
+                Logger.LogInformation("Initialazing SRanipal...");
+                SRanipal_API.InitialRuntime();
+                Logger.LogInformation("Done!");
+            }
         }
         
         public override void Teardown()
