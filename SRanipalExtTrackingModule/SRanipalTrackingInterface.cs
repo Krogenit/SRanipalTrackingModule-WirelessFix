@@ -204,9 +204,6 @@ namespace SRanipalExtTrackingInterface
                     Logger.LogInformation($"{name} successfully started!");
                     return true;
                 case Error.RUNTIME_NO_RESPONSE:
-                    Logger.LogInformation($"Reinitializing SRanipal because of error {error}...");
-                    SRanipal_API.InitialRuntime();
-                    return InitTracker(anipalType, name);
                 case Error.TIMEOUT:
                     Logger.LogInformation($"Restarting SRanipal because of error {error}...");
                     restartSRanipalProcess();
