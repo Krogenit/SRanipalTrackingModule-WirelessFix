@@ -9,5 +9,12 @@ namespace ViveSR
             IDLE,
             WORKING,
         }
+
+        public enum TrackerInitStatus : int
+        {
+            SUCCESS,
+            NEED_REINIT,
+            FAILED
+        }
     }
 }
