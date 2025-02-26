@@ -1,0 +1,16 @@
+{
+    "ModuleId": "d766efa1-7772-46a4-a668-87d5cb1bedd9",
+    "AuthorName": "VRCFT Team",
+    "DllFileName": "SRanipalExtTrackingModule.dll",
+    "Downloads": 1,
+    "DownloadUrl": "https://github.com/Krogenit/SRanipalTrackingModule-WirelessFix/releases/download/1.5.3/SRanipalExtTrackingModule.dll",
+    "LastUpdated": "2025-02-26T16:13:00Z",
+    "ModuleDescription": "The module provides gaze tracking data for SRanipal to interact with VRCFT",
+    "ModuleName": "SRanipalTrackingModule",
+    "ModulePageUrl": "https://github.com/VRCFaceTracking/SRanipalTrackingModule",
+    "Rating": 4.0,
+    "Ratings": 1,
+    "RatingSum": 1,
+    "UsageInstructions": "Don't forget to install the SRanipal Runtime before installing this module!!",
+    "Version": "1.5.3"
+}
