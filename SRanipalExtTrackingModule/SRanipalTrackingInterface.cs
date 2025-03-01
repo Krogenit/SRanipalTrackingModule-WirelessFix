@@ -237,41 +237,18 @@ namespace SRanipalExtTrackingInterface
             return TrackerInitStatus.FAILED;
         }
 
-        private void ReinitTracker(int anipalType, string name)
+        private Error ReinitTracker(int anipalType, string name)
         {
             Logger.LogInformation($"Reinitializing {name}...");
-            var error = SRanipal_API.Initial(anipalType, IntPtr.Zero);
-
-            switch (error)
-            {
-                case Error.RUNTIME_NO_RESPONSE:
-                case Error.TIMEOUT:
-                    Logger.LogInformation($"Restarting SRanipal because of error {error}...");
-                    RestartSRanipalProcess();
-                    ReinitTrackers();
-                    break;
-                case Error.INITIAL_FAILED:
-                    Logger.LogInformation($"Forcing initialization because of error {error}...");
-                    ReinitTrackers();
-                    break;
-                case Error.FOXIP_SO: // wireless issue
-                    Logger.LogInformation("Vive wireless detected. Forcing initialization...");
-                    ReinitTrackers();
-                    break;
-                case Error.WORK:
-                    Logger.LogInformation($"{name} successfully started!");
-                    break;
-                default:
-                    Logger.LogInformation($"Forcing initialization because of error {error}...");
-                    ReinitTrackers();
-                    break;
-            }
+            return SRanipal_API.Initial(anipalType, IntPtr.Zero);
         }
 
         public void RestartSRanipalProcess()
         {
             SRanipal_API.ReleaseRuntime();
-            Boolean processKilled = KillProcess();
+            Thread.Sleep(1000);
+
+            bool processKilled = KillProcess();
 
             if (processKilled)
             {
@@ -292,7 +269,6 @@ namespace SRanipalExtTrackingInterface
 
                 Thread.Sleep(250);
                 Logger.LogInformation("Initialazing SRanipal...");
-                SRanipal_API.InitialRuntime();
 
                 if (Utils.HasAdmin)
                 {
@@ -317,23 +293,21 @@ namespace SRanipalExtTrackingInterface
             if (_process != null)
             {
                 _process.Kill();
-                Logger.LogInformation($"Killed _process {_process}");
+                Logger.LogInformation($"Killed attached process {_process}");
                 processKilled = true;
             }
-            else
-            {
-                Logger.LogInformation("Searching SRanipal proccess");
-                foreach (var process in Process.GetProcessesByName("sr_runtime"))
-                {
-                    process.Kill();
-                    Logger.LogInformation($"Killed process {process}");
-                    processKilled = true;
-                }
 
-                if (!processKilled)
-                {
-                    Logger.LogInformation("Process not found");
-                }
+            Logger.LogInformation("Searching SRanipal proccess");
+            foreach (var process in Process.GetProcessesByName("sr_runtime"))
+            {
+                process.Kill();
+                Logger.LogInformation($"Killed process {process}");
+                processKilled = true;
+            }
+
+            if (!processKilled)
+            {
+                Logger.LogWarning("Process not found!");
             }
 
             return processKilled;
@@ -367,14 +341,69 @@ namespace SRanipalExtTrackingInterface
             Logger.LogInformation("Reinitializing trackers...");
             SRanipal_API.InitialRuntime();
 
+            Error error = Error.WORK;
+            string trackerName = "Eye";
+
             if (eyeEnabled)
             {
-                ReinitTracker(SRanipal_Eye_v2.ANIPAL_TYPE_EYE_V2, "Eye");
+                error = ReinitTracker(SRanipal_Eye_v2.ANIPAL_TYPE_EYE_V2, trackerName);
             }
 
+            if (error != Error.WORK)
+            {
+                HandleError(error);
+                return;
+            }
+            else
+            {
+                Logger.LogInformation($"{trackerName} successfully started!");
+            }
+
+            trackerName = "Lip";
             if (lipEnabled)
             {
-                ReinitTracker(SRanipal_Lip_v2.ANIPAL_TYPE_LIP_V2, "Lip");
+                error =  ReinitTracker(SRanipal_Lip_v2.ANIPAL_TYPE_LIP_V2, trackerName);
+            }
+
+            if (error != Error.WORK)
+            {
+                HandleError(error);
+            }
+            else
+            {
+                Logger.LogInformation($"{trackerName} successfully started!");
+            }
+        }
+
+        private void HandleError(Error error)
+        {
+            switch (error)
+            {
+                case Error.RUNTIME_NO_RESPONSE:
+                case Error.TIMEOUT:
+                    Logger.LogInformation($"Restarting SRanipal because of error {error}...");
+                    Thread.Sleep(2000);
+                    RestartSRanipalProcess();
+                    Thread.Sleep(2000);
+                    ReinitTrackers();
+                    break;
+                case Error.INITIAL_FAILED:
+                    Logger.LogInformation($"Forcing initialization because of error {error}...");
+                    ReinitTrackers();
+                    break;
+                case Error.FOXIP_SO: // wireless issue
+                    Logger.LogInformation("Vive wireless detected. Forcing initialization...");
+                    ReinitTrackers();
+                    break;
+                case Error.DEVICE_NOT_FOUND:
+                    Logger.LogInformation($"Forcing initialization after 5 seconds because of error {error}...");
+                    Thread.Sleep(5000);
+                    ReinitTrackers();
+                    break;
+                default:
+                    Logger.LogInformation($"Forcing initialization because of error {error}...");
+                    ReinitTrackers();
+                    break;
             }
         }
 
